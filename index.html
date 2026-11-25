@@ -77,35 +77,99 @@
   .pp dt{color:var(--muted)} .pp dd{margin:0;font-variant-numeric:tabular-nums}
   .pp a{display:inline-flex;gap:6px;align-items:center;font-size:13px;font-weight:600;color:var(--accent);text-decoration:none}
   .pp a:hover{text-decoration:underline}
-  .fab{display:none}
+  .mtop,.msum{display:none}
+  .locbtn{width:34px;height:34px;display:grid;place-items:center;background:#fff;border:0;cursor:pointer;color:var(--ink)}
+  .locbtn:hover{background:#f4f4f4}
+  .locbtn.busy svg{animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .me{width:16px;height:16px;border-radius:50%;background:#2563eb;border:3px solid #fff;box-shadow:0 0 0 6px rgba(37,99,235,.25)}
+  .toast{position:fixed;left:50%;top:20px;transform:translateX(-50%);background:#0f172a;color:#fff;font-size:13px;padding:8px 14px;border-radius:999px;z-index:900;opacity:0;pointer-events:none;transition:opacity .2s}
+  .toast.show{opacity:.92}
+
+  /* ================= MOBILE ================= */
   @media (max-width:800px){
-    .app{grid-template-columns:1fr;grid-template-rows:1fr}
-    aside{position:fixed;inset:auto 0 0 0;height:62vh;border-radius:18px 18px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.15);transform:translateY(calc(100% - 64px));transition:transform .25s}
-    aside.open{transform:none}
-    .head{padding-top:14px;cursor:pointer}
-    .head::before{content:"";display:block;width:40px;height:4px;border-radius:2px;background:#cbd5e1;margin:0 auto 10px}
-    .mapwrap{height:100vh}
-    .legend{bottom:auto;top:12px;right:12px}
+    html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+    .app{display:block;height:100dvh}
+    .mapwrap{position:fixed;inset:0}
+    .desk,.stats,.eyebrow,.legend,.leaflet-control-zoom{display:none!important}
+
+    /* top bar: search + filter pills */
+    .mtop{display:block;position:fixed;top:0;left:0;right:0;z-index:600;
+      padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;
+      background:linear-gradient(to bottom,rgba(245,246,248,.97) 60%,rgba(245,246,248,0))}
+    .mtop .search input{font-size:16px;padding:12px 40px 12px 40px;border-radius:14px;border:1px solid transparent;box-shadow:0 2px 10px rgba(15,23,42,.14)}
+    .mtop .search svg{left:14px}
+    .mtop .clr{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:0;background:none;color:var(--muted);font-size:20px;display:none;cursor:pointer}
+    .mtop .clr.on{display:block}
+    .mchips{display:flex;gap:8px;overflow-x:auto;padding:10px 2px 2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    .mchips::-webkit-scrollbar{display:none}
+    .mchip{flex:none;display:inline-flex;align-items:center;gap:7px;border:1px solid transparent;background:#fff;border-radius:999px;
+      padding:8px 14px;font:inherit;font-size:14px;font-weight:600;color:var(--ink);box-shadow:0 1px 4px rgba(15,23,42,.14);cursor:pointer;min-height:38px}
+    .mchip .sw{width:10px;height:10px;border-radius:50%}
+    .mchip small{font-weight:500;color:var(--muted);font-size:12px}
+    .mchip.off{background:#eef1f4;box-shadow:none;color:var(--muted)}
+    .mchip.off .sw{background:#cbd5e1!important}
+
+    /* bottom sheet */
+    aside{position:fixed;left:0;right:0;bottom:0;top:auto;height:var(--sheet-h,88px);border:0;border-radius:20px 20px 0 0;
+      box-shadow:0 -6px 30px rgba(15,23,42,.2);transition:height .3s cubic-bezier(.2,.8,.2,1);padding-bottom:env(safe-area-inset-bottom);z-index:700}
+    aside.dragging{transition:none}
+    .head{padding:8px 18px 10px;touch-action:none;cursor:grab;user-select:none}
+    .head::before{content:"";display:block;width:42px;height:5px;border-radius:3px;background:#cbd5e1;margin:0 auto 10px}
+    h1{font-size:16px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sub{display:none}
+    .msum{display:flex;justify-content:space-between;align-items:center;margin:3px 0 0;font-size:13px;color:var(--muted)}
+    .msum b{color:var(--ink);font-variant-numeric:tabular-nums}
+    .msum .hint{color:var(--accent);font-weight:600;display:flex;align-items:center;gap:4px}
+    .msum .hint svg{transition:transform .25s}
+    aside.expanded .msum .hint svg{transform:rotate(180deg)}
+    aside{overflow:hidden}
+    .listhead{padding:2px 18px 10px;gap:10px;justify-content:space-between}
+    #count{display:none}
+    .toggle{white-space:nowrap;font-size:14px}
+    .listhead select{font-size:14px;padding:6px 8px;border-radius:8px}
+    .item{padding:12px 18px;min-height:60px}
+    .item .t{font-size:15px}
+    .badge{width:38px;height:38px}
+
+    .leaflet-top{top:calc(env(safe-area-inset-top) + 112px)}
+    .leaflet-bottom{bottom:calc(88px + env(safe-area-inset-bottom))}
+    .leaflet-control-layers-toggle{width:40px;height:40px}
+    .locbtn{width:40px;height:40px}
+    .leaflet-popup-content{min-width:200px;margin:12px 14px}
+    .pp a{padding:8px 0}
+    .toast{top:calc(env(safe-area-inset-top) + 120px)}
   }
 </style>
 </head>
 <body>
 <div class="app">
+  <div class="mtop">
+    <div class="search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="mq" type="search" placeholder="ค้นหาชื่อจุด หรือรหัส…" autocomplete="off" enterkeyhint="search">
+      <button class="clr" id="mclr" aria-label="ล้างคำค้น">×</button>
+    </div>
+    <div class="mchips" id="mchips"></div>
+  </div>
+  <div class="toast" id="toast"></div>
   <aside id="panel">
     <div class="head" id="panelHead">
       <span class="eyebrow"><span class="dot"></span>CCTV · เขตคลองเตยกรุงเทพมหานคร</span>
       <h1>จุดติดตั้งกล้องวงจรปิด เขตคลองเตย</h1>
       <p class="sub" id="subline"></p>
+      <p class="msum"><span>แสดง <b id="mPts">0</b> จุด · <b id="mCams">0</b> กล้อง</span>
+        <span class="hint"><span id="hintTxt">ดูรายการ</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 15 6-6 6 6"/></svg></span></p>
     </div>
     <div class="stats">
       <div class="stat"><div class="n" id="sPts">0</div><div class="l">จุดที่แสดง</div></div>
       <div class="stat"><div class="n" id="sCams">0</div><div class="l">กล้องที่แสดง</div></div>
     </div>
-    <div class="section">
+    <div class="section desk">
       <p class="label">ประเภทกล้อง</p>
       <div class="chips" id="chips"></div>
     </div>
-    <div class="section">
+    <div class="section desk">
       <div class="row">
         <div class="search">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -120,7 +184,12 @@
     </div>
     <div class="listhead">
       <span id="count"></span>
-      <label class="toggle"><input type="checkbox" id="cluster" checked> รวมกลุ่มจุด</label>
+      <select id="msort" class="msort" title="เรียงลำดับ" style="display:none">
+        <option value="code">เรียงตามรหัส</option>
+        <option value="cams">กล้องมาก → น้อย</option>
+        <option value="name">เรียงตามชื่อ</option>
+      </select>
+      <label class="toggle"><input type="checkbox" id="cluster" checked> รวมกลุ่ม</label>
     </div>
     <div class="list" id="list"></div>
   </aside>
@@ -387,6 +456,8 @@ TF-PK-1,แยกพระโขนง,1,13.71305,100.59411,จราจร</scr
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
+const mq = window.matchMedia('(max-width:800px)');
+const isMobile = () => mq.matches;
 const TYPES = {
   'Digital': {color:getComputedStyle(document.documentElement).getPropertyValue('--digital').trim(), label:'Digital'},
   'Analog':  {color:getComputedStyle(document.documentElement).getPropertyValue('--analog').trim(),  label:'Analog'},
@@ -458,10 +529,10 @@ function popupHtml(p){
 }
 points.forEach(p => {
   p.marker = L.marker([p.lat,p.lng], {icon:iconFor(p), pt:p, title:p.name});
-  p.marker.bindPopup(popupHtml(p));
+  p.marker.bindPopup(popupHtml(p), {maxWidth:280, autoPanPaddingTopLeft:L.point(16, isMobile()?130:20), autoPanPaddingBottomRight:L.point(16, isMobile()?110:20)});
   p.marker.on('mouseover', ()=>highlight(p,true));
   p.marker.on('mouseout', ()=>highlight(p,false));
-  p.marker.on('click', ()=>markActive(p));
+  p.marker.on('click', ()=>{ markActive(p); if (isMobile()) setSheet(0); });
 });
 
 // ---- state & UI ----
@@ -476,8 +547,13 @@ Object.entries(TYPES).forEach(([t,info]) => {
     <div style="flex:1"><div style="display:flex;justify-content:space-between;gap:8px">
       <span class="name">${info.label}</span><span class="cnt">${pts.length} จุด · ${cams} กล้อง</span></div>
       <div class="bar"><i style="width:${cams/maxTypeCams*100}%;background:${info.color}"></i></div></div>`;
-  b.onclick = () => { state.types.has(t) ? state.types.delete(t) : state.types.add(t); b.classList.toggle('off'); render(); };
-  chipsEl.appendChild(b);
+  const m = document.createElement('button');
+  m.className = 'mchip';
+  m.innerHTML = `<span class="sw" style="background:${info.color}"></span>${info.label} <small>${cams}</small>`;
+  const toggle = () => { state.types.has(t) ? state.types.delete(t) : state.types.add(t);
+    const off = !state.types.has(t); b.classList.toggle('off', off); m.classList.toggle('off', off); render(); };
+  b.onclick = toggle; m.onclick = toggle;
+  chipsEl.appendChild(b); document.getElementById('mchips').appendChild(m);
 });
 
 const collator = new Intl.Collator('th', {numeric:true});
@@ -499,6 +575,8 @@ function render(fit){
   document.getElementById('sPts').textContent = arr.length.toLocaleString('th-TH');
   document.getElementById('sCams').textContent = arr.reduce((s,p)=>s+p.cams,0).toLocaleString('th-TH');
   document.getElementById('count').textContent = `แสดง ${arr.length} จาก ${points.length} จุด`;
+  document.getElementById('mPts').textContent = arr.length.toLocaleString('th-TH');
+  document.getElementById('mCams').textContent = arr.reduce((s,p)=>s+p.cams,0).toLocaleString('th-TH');
   listEl.innerHTML = arr.length ? '' : '<div class="empty">ไม่พบจุดที่ตรงกับเงื่อนไข</div>';
   const frag = document.createDocumentFragment();
   arr.forEach(p => {
@@ -526,21 +604,105 @@ function markActive(p){
 }
 function focusPoint(p){
   markActive(p);
-  if (window.innerWidth <= 800) panel.classList.remove('open');
+  if (isMobile()) setSheet(0);
   const open = () => { map.setView([p.lat,p.lng], Math.max(map.getZoom(),17), {animate:true}); p.marker.openPopup(); };
   activeLayer === clusterLayer ? clusterLayer.zoomToShowLayer(p.marker, open) : open();
 }
 
+const panel = document.getElementById('panel');
+const qIn = document.getElementById('q'), mqIn = document.getElementById('mq'), mclr = document.getElementById('mclr');
 let t;
-document.getElementById('q').addEventListener('input', e => { clearTimeout(t); t = setTimeout(()=>{ state.q = e.target.value.trim(); render(!!state.q); }, 150); });
-document.getElementById('sort').addEventListener('change', e => { state.sort = e.target.value; render(); });
+function onSearch(v, src){
+  if (src !== qIn) qIn.value = v;
+  if (src !== mqIn) mqIn.value = v;
+  mclr.classList.toggle('on', !!v);
+  clearTimeout(t);
+  t = setTimeout(()=>{ state.q = v.trim(); render(!!state.q); if (isMobile() && state.q && sheetIdx===0) setSheet(1); }, 180);
+}
+qIn.addEventListener('input', e => onSearch(e.target.value, qIn));
+mqIn.addEventListener('input', e => onSearch(e.target.value, mqIn));
+mqIn.addEventListener('keydown', e => { if (e.key==='Enter') mqIn.blur(); });
+mclr.addEventListener('click', () => { onSearch('', null); mqIn.focus(); });
+
+const sortSel = document.getElementById('sort'), msort = document.getElementById('msort');
+[sortSel, msort].forEach(s => s.addEventListener('change', e => { state.sort = sortSel.value = msort.value = e.target.value; render(); }));
+
 document.getElementById('cluster').addEventListener('change', e => {
   map.removeLayer(activeLayer);
   activeLayer = e.target.checked ? clusterLayer : plainLayer;
   map.addLayer(activeLayer); render();
 });
-const panel = document.getElementById('panel');
-document.getElementById('panelHead').addEventListener('click', () => { if (window.innerWidth <= 800) panel.classList.toggle('open'); });
+
+// ---- bottom sheet (mobile) ----
+const PEEK = 88;
+const snaps = () => [PEEK, Math.round(innerHeight*0.5), Math.round(innerHeight - 70)];
+let sheetIdx = 0;
+function setSheet(i){
+  sheetIdx = i;
+  panel.style.setProperty('--sheet-h', snaps()[i] + 'px');
+  panel.classList.toggle('expanded', i > 0);
+  document.getElementById('hintTxt').textContent = i > 0 ? 'ย่อ' : 'ดูรายการ';
+}
+const head = document.getElementById('panelHead');
+let drag = null;
+head.addEventListener('pointerdown', e => {
+  if (!isMobile()) return;
+  drag = {y:e.clientY, h:panel.getBoundingClientRect().height, moved:false};
+  panel.classList.add('dragging'); head.setPointerCapture(e.pointerId);
+});
+head.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const dy = e.clientY - drag.y;
+  if (Math.abs(dy) > 6) drag.moved = true;
+  const [min,,max] = snaps();
+  panel.style.setProperty('--sheet-h', Math.max(min, Math.min(max, drag.h - dy)) + 'px');
+});
+const endDrag = e => {
+  if (!drag) return;
+  panel.classList.remove('dragging');
+  if (!drag.moved) setSheet(sheetIdx === 0 ? 1 : 0);
+  else {
+    const h = panel.getBoundingClientRect().height, s = snaps();
+    let best = 0; s.forEach((v,i) => { if (Math.abs(v-h) < Math.abs(s[best]-h)) best = i; });
+    // flick bias
+    if (e.clientY - drag.y < -60 && best === sheetIdx) best = Math.min(2, sheetIdx+1);
+    if (e.clientY - drag.y > 60 && best === sheetIdx) best = Math.max(0, sheetIdx-1);
+    setSheet(best);
+  }
+  drag = null;
+};
+head.addEventListener('pointerup', endDrag);
+head.addEventListener('pointercancel', endDrag);
+map.on('dragstart', () => { if (isMobile() && sheetIdx > 0) setSheet(0); });
+function syncLayout(){
+  msort.style.display = isMobile() ? '' : 'none';
+  if (isMobile()) setSheet(sheetIdx); else panel.style.removeProperty('--sheet-h');
+}
+mq.addEventListener('change', syncLayout);
+addEventListener('resize', () => { if (isMobile()) setSheet(sheetIdx); });
+syncLayout();
+
+// ---- locate me ----
+const toastEl = document.getElementById('toast');
+function toast(msg){ toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(toastEl._t); toastEl._t = setTimeout(()=>toastEl.classList.remove('show'), 2600); }
+let meMarker;
+const Locate = L.Control.extend({
+  options:{position:'topright'},
+  onAdd(){
+    const wrap = L.DomUtil.create('div','leaflet-bar');
+    const b = L.DomUtil.create('button','locbtn', wrap);
+    b.title = 'ตำแหน่งของฉัน'; b.setAttribute('aria-label','ตำแหน่งของฉัน');
+    b.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg>';
+    L.DomEvent.disableClickPropagation(wrap);
+    b.onclick = () => { b.classList.add('busy'); map.locate({setView:true, maxZoom:17, enableHighAccuracy:true}); };
+    map.on('locationfound', e => { b.classList.remove('busy');
+      if (meMarker) meMarker.setLatLng(e.latlng);
+      else meMarker = L.marker(e.latlng, {icon:L.divIcon({className:'', html:'<div class="me"></div>', iconSize:[16,16]}), zIndexOffset:1000}).addTo(map); });
+    map.on('locationerror', () => { b.classList.remove('busy'); toast('ไม่สามารถระบุตำแหน่งได้ กรุณาอนุญาตการเข้าถึงตำแหน่ง'); });
+    return wrap;
+  }
+});
+new Locate().addTo(map);
 
 render(true);
 </script>
