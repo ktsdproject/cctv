@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>แผนที่จุดติดตั้งกล้อง CCTV · เขตคลองเตย</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<style>
+  :root{
+    --bg:#f5f6f8; --panel:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb;
+    --digital:#2563eb; --analog:#f59e0b; --traffic:#e11d48;
+    --accent:#0f766e; --radius:14px;
+    --shadow:0 1px 2px rgba(15,23,42,.06),0 8px 24px rgba(15,23,42,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:"IBM Plex Sans Thai",system-ui,sans-serif;color:var(--ink);background:var(--bg)}
+  .app{display:grid;grid-template-columns:380px 1fr;height:100vh}
+  aside{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;z-index:500}
+  .head{padding:22px 22px 14px}
+  .eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--accent);background:#ccfbf1;padding:3px 10px;border-radius:999px;letter-spacing:.2px}
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(15,118,110,.18)}
+  h1{font-size:21px;line-height:1.3;margin:10px 0 2px;font-weight:700}
+  .sub{color:var(--muted);font-size:13px;margin:0}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 22px 14px}
+  .stat{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .stat .n{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+  .stat .l{font-size:12px;color:var(--muted)}
+  .section{padding:0 22px 12px}
+  .label{font-size:12px;font-weight:600;color:var(--muted);margin:0 0 6px;text-transform:uppercase;letter-spacing:.4px}
+  .chips{display:flex;flex-direction:column;gap:6px}
+  .chip{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;cursor:pointer;font:inherit;font-size:14px;text-align:left;transition:.15s}
+  .chip:hover{border-color:#cbd5e1}
+  .chip .sw{width:12px;height:12px;border-radius:4px;flex:none}
+  .chip .name{flex:1;font-weight:500}
+  .chip .cnt{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .chip .bar{height:4px;border-radius:2px;background:#eef2f7;margin-top:5px;overflow:hidden}
+  .chip .bar i{display:block;height:100%}
+  .chip.off{opacity:.45}
+  .chip.off .sw{background:#cbd5e1!important}
+  .row{display:flex;gap:8px}
+  .search{position:relative;flex:1}
+  .search input,select{width:100%;font:inherit;font-size:14px;border:1px solid var(--line);border-radius:10px;padding:9px 12px 9px 34px;outline:none;background:#fff;color:var(--ink)}
+  select{padding-left:10px;width:auto;cursor:pointer}
+  .search input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(15,118,110,.12)}
+  .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted)}
+  .listhead{display:flex;justify-content:space-between;align-items:center;padding:4px 22px 8px;font-size:13px;color:var(--muted)}
+  .toggle{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+  .toggle input{accent-color:var(--accent)}
+  .list{flex:1;overflow:auto;border-top:1px solid var(--line);min-height:0}
+  .item{display:flex;gap:12px;align-items:center;padding:10px 22px;border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background .12s}
+  .item:hover,.item.active{background:#f0fdfa}
+  .badge{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+  .item .t{font-size:14px;font-weight:500;line-height:1.35;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .item .c{font-size:12px;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
+  .empty{padding:30px 22px;color:var(--muted);text-align:center;font-size:14px}
+  #map{height:100%;width:100%;background:#e8ecef}
+  .mapwrap{position:relative;min-width:0}
+  .legend{position:absolute;right:14px;bottom:24px;z-index:450;background:rgba(255,255,255,.95);backdrop-filter:blur(6px);border-radius:12px;box-shadow:var(--shadow);padding:10px 14px;font-size:13px}
+  .legend div{display:flex;align-items:center;gap:8px;margin:3px 0}
+  .legend span{width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+  .legend small{display:block;color:var(--muted);margin-top:4px;font-size:11px}
+  /* markers */
+  .pin{border-radius:50%;color:#fff;font-weight:700;display:grid;place-items:center;border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);font-family:"IBM Plex Sans Thai",sans-serif;transition:transform .15s}
+  .pin.hl{transform:scale(1.35);box-shadow:0 0 0 4px rgba(15,118,110,.35),0 2px 8px rgba(0,0,0,.35)}
+  .cluster{border-radius:50%;display:grid;place-items:center;color:#0f172a;font-weight:700;font-size:13px;background:rgba(255,255,255,.95);border:3px solid var(--accent);box-shadow:0 0 0 6px rgba(15,118,110,.18),0 2px 8px rgba(0,0,0,.2)}
+  .cluster small{display:block;font-size:8.5px;white-space:nowrap;font-weight:500;color:var(--muted);line-height:1;margin-top:-2px}
+  .leaflet-popup-content-wrapper{border-radius:14px;box-shadow:var(--shadow)}
+  .leaflet-popup-content{margin:14px 16px;font-family:"IBM Plex Sans Thai",sans-serif;min-width:220px}
+  .pp .type{display:inline-block;font-size:11px;font-weight:600;color:#fff;padding:2px 8px;border-radius:999px}
+  .pp h3{margin:8px 0 2px;font-size:15px;line-height:1.35}
+  .pp .code{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted)}
+  .pp dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:10px 0;font-size:13px}
+  .pp dt{color:var(--muted)} .pp dd{margin:0;font-variant-numeric:tabular-nums}
+  .pp a{display:inline-flex;gap:6px;align-items:center;font-size:13px;font-weight:600;color:var(--accent);text-decoration:none}
+  .pp a:hover{text-decoration:underline}
+  .fab{display:none}
+  @media (max-width:800px){
+    .app{grid-template-columns:1fr;grid-template-rows:1fr}
+    aside{position:fixed;inset:auto 0 0 0;height:62vh;border-radius:18px 18px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.15);transform:translateY(calc(100% - 64px));transition:transform .25s}
+    aside.open{transform:none}
+    .head{padding-top:14px;cursor:pointer}
+    .head::before{content:"";display:block;width:40px;height:4px;border-radius:2px;background:#cbd5e1;margin:0 auto 10px}
+    .mapwrap{height:100vh}
+    .legend{bottom:auto;top:12px;right:12px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="panel">
+    <div class="head" id="panelHead">
+      <span class="eyebrow"><span class="dot"></span>CCTV · เขตคลองเตยกรุงเทพมหานคร</span>
+      <h1>จุดติดตั้งกล้องวงจรปิด เขตคลองเตย</h1>
+      <p class="sub" id="subline"></p>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n" id="sPts">0</div><div class="l">จุดที่แสดง</div></div>
+      <div class="stat"><div class="n" id="sCams">0</div><div class="l">กล้องที่แสดง</div></div>
+    </div>
+    <div class="section">
+      <p class="label">ประเภทกล้อง</p>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="section">
+      <div class="row">
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="q" type="search" placeholder="ค้นหาชื่อจุด หรือรหัส…" autocomplete="off">
+        </div>
+        <select id="sort" title="เรียงลำดับ">
+          <option value="code">เรียงตามรหัส</option>
+          <option value="cams">กล้องมาก → น้อย</option>
+          <option value="name">เรียงตามชื่อ</option>
+        </select>
+      </div>
+    </div>
+    <div class="listhead">
+      <span id="count"></span>
+      <label class="toggle"><input type="checkbox" id="cluster" checked> รวมกลุ่มจุด</label>
+    </div>
+    <div class="list" id="list"></div>
+  </aside>
+  <div class="mapwrap">
+    <div id="map"></div>
+    <div class="legend">
+      <div><span style="background:var(--digital)"></span>Digital</div>
+      <div><span style="background:var(--analog)"></span>Analog</div>
+      <div><span style="background:var(--traffic)"></span>จราจร</div>
+      <small>ตัวเลขในหมุด = จำนวนกล้อง</small>
+    </div>
+  </div>
+</div>
+
+<script type="text/csv" id="data">รหัสจุด,ชื่อจุด,จำนวนกล้อง,ละติจูด,ลองจิจูด,ประเภท
+AC-KT-1,ชุมชนหมู่บ้านพัฒนา,9,13.710673,100.575192,Digital
+AC-KT-10,ศูนย์รวมน้ำใจ,9,13.71304,100.56975,Digital
+AC-KT-11,สายน้ำผึ้ง,9,13.727768,100.565133,Digital
+AC-KT-5,ปทุมคงคา,9,13.719374,100.582098,Digital
+AC-KT-6,โรงเรียนฝึกอาชีพกรุงเทพมหานคร (คลองเตย),8,13.710457,100.576527,Digital
+AC-KT-7,วัดคลองเตย,6,13.710349,100.561634,Digital
+AC-KT-8,วัดสะพาน,6,13.704238,100.588745,Digital
+CM2-KT-1,ซอยสุขุมวิท 4 (ซอยนานาใต้),4,13.73908,100.55294,Analog
+CM2-KT-10,ซอยสุขุมวิท 24,4,13.725749,100.567645,Analog
+CM2-KT-11,ซอยคุณหญิงพวงรัตน์,4,13.726127,100.569575,Analog
+CM2-KT-12,ซอยแสนสุข แยก 5,4,13.719162,100.57285,Analog
+CM2-KT-13,ซอยชัยมงคล ถนนพระราม 4,4,13.718914,100.56354,Analog
+CM2-KT-14,ซอยเสาวนิตย์ (สุขุมวิท 50),4,13.70524,100.596283,Analog
+CM2-KT-15,หน้าอาคารเลครัชดา,4,13.730567,100.559979,Analog
+CM2-KT-16,ชุมชนโรงหมู (1),4,13.706903,100.586592,Analog
+CM2-KT-17,ชุมชนโรงหมู (2),4,13.708196,100.583111,Analog
+CM2-KT-18,ชุมชนหัวโค้ง (1),4,13.711995,100.568564,Analog
+CM2-KT-19,ชุมชนหัวโค้ง (2),4,13.712163,100.56923,Analog
+CM2-KT-2,ซอยสุขุมวิท 48,4,13.711957,100.595179,Analog
+CM2-KT-20,ชุมชนบ้านกล้วย (1),4,13.712827,100.576756,Analog
+CM2-KT-21,ชุมชนบ้านกล้วย (2),4,13.712144,100.578306,Analog
+CM2-KT-22,ชุมชนร่วมใจสามัคคี (1),4,13.714213,100.573211,Analog
+CM2-KT-23,ชุมชนร่วมใจสามัคคี (2),4,13.71448,100.572573,Analog
+CM2-KT-24,หลังที่ทำการสก.เขตคลองเตย,4,13.711533,100.560508,Analog
+CM2-KT-25,ชุมชนตลาดปีนัง,4,13.715045,100.558,Analog
+CM2-KT-26,ชุมชนริมทางรถไฟสายท่าเรือ (1),4,13.718532,100.554346,Analog
+CM2-KT-27,ชุมชนริมทางรถไฟสายท่าเรือ (2),4,13.719782,100.553254,Analog
+CM2-KT-28,ชุมชนสวนอ้อย (1),4,13.699231,100.589329,Analog
+CM2-KT-29,ชุมชนสวนอ้อย (2),4,13.69905,100.588805,Analog
+CM2-KT-3,ซอยเจริญสุข (ถนนพระราม 4),4,13.719083,100.562095,Analog
+CM2-KT-30,หน้าเซเว่นอีเลเว่น ถนนสุนทรโกษา,4,13.718005,100.557918,Analog
+CM2-KT-31,หน้าเซเว่นอีเลเว่น ถนนอาจณรงค์,4,13.712993,100.57078,Analog
+CM2-KT-32,ชุมชนเริ่มเจริญ (1),4,13.704589,100.592749,Analog
+CM2-KT-33,ชุมชนเริ่มเจริญ (2),4,13.705245,100.592409,Analog
+CM2-KT-34,ชุมชนภูมิจิตร (1),4,13.711273,100.588008,Analog
+CM2-KT-35,ชุมชนภูมิจิตร (2),4,13.712049,100.587781,Analog
+CM2-KT-36,ซอยสุขุมวิท 10,4,13.736567,100.557009,Analog
+CM2-KT-37,ซอยแสนสุข แยก 2,4,13.717461,100.572881,Analog
+CM2-KT-38,ชุมชนเกาะกลาง (1),4,13.709888,100.596197,Analog
+CM2-KT-39,ชุมชนเกาะกลาง (2),4,13.709732,100.595763,Analog
+CM2-KT-4,ซอยเมธีนิเวษม์,4,13.726377,100.567956,Analog
+CM2-KT-40,ชุมชนสวัสดี (1),4,13.702728,100.59492,Analog
+CM2-KT-41,ชุมชนสวัสดี (2),4,13.702271,100.595469,Analog
+CM2-KT-42,ชุมชนหมู่บ้านเปรมฤทัย (1),4,13.707332,100.591847,Analog
+CM2-KT-43,ชุมชนหมู่บ้านเปรมฤทัย (2),4,13.707639,100.592243,Analog
+CM2-KT-44,ชุมชนสวนไทร (1),4,13.70448,100.58931,Analog
+CM2-KT-45,ชุมชนสวนไทร (2),4,13.702784,100.589842,Analog
+CM2-KT-46,ชุมชนวัดคลองเตยใน 1 (1),4,13.711193,100.561878,Analog
+CM2-KT-47,ชุมชนวัดคลองเตยใน 1 (2),4,13.711247,100.561332,Analog
+CM2-KT-48,ชุมชนวัดคลองเตยใน 2 (1),4,13.709745,100.563603,Analog
+CM2-KT-49,ชุมชนวัดคลองเตยใน 2 (2),4,13.710515,100.563329,Analog
+CM2-KT-5,ซอยสุขุมวิท 36,4,13.724693,100.577655,Analog
+CM2-KT-50,ชุมชนวัดคลองเตยใน 3 (1),4,13.712225,100.561506,Analog
+CM2-KT-51,ชุมชนวัดคลองเตยใน 3 (2),4,13.71245,100.560544,Analog
+CM2-KT-52,ชุมชนน้องใหม่ (1),4,13.712535,100.568933,Analog
+CM2-KT-53,ชุมชนน้องใหม่ (2),4,13.712237,100.568173,Analog
+CM2-KT-54,ริมคลองสามัคคี (1),4,13.715064,100.568278,Analog
+CM2-KT-55,ริมคลองสามัคคี (2),4,13.714522,100.569564,Analog
+CM2-KT-56,ชุมชนพัฒนาใหม่ (1),4,13.71661,100.56411,Analog
+CM2-KT-57,ชุมชนพัฒนาใหม่ (2),4,13.715883,100.563736,Analog
+CM2-KT-58,ริมคลองวัดสะพาน (1),4,13.706296,100.58708,Analog
+CM2-KT-59,ริมคลองวัดสะพาน (2),4,13.70516,100.584227,Analog
+CM2-KT-6,ซอยแสนสุข แยก 10,4,13.720146,100.572803,Analog
+CM2-KT-60,ชุมชนพัฒนาอาเซีย (1),4,13.713617,100.554651,Analog
+CM2-KT-61,ชุมชนพัฒนาอาเซีย (2),4,13.711548,100.554293,Analog
+CM2-KT-62,อาคารทรัพย์สิน 26-7,4,13.722243,100.560329,Analog
+CM2-KT-63,ชุมชนนภาศัพท์ แยก 4 (1),4,13.720865,100.574422,Analog
+CM2-KT-64,ชุมชนนภาศัพท์ แยก 4 (2),4,13.720052,100.574556,Analog
+CM2-KT-65,ชุมชนเทพประทาน (1),4,13.722267,100.555767,Analog
+CM2-KT-66,ชุมชนเทพประทาน (2),4,13.722502,100.557735,Analog
+CM2-KT-67,ธนาคารกรุงเทพ สาขาพระโขนง ถนนสุขุมวิท,4,13.712626,100.589619,Analog
+CM2-KT-68,ธนาคารกรุงเทพ สาขากล้วยน้ำไท ถนนพระรามที่ 4,4,13.712964,100.586348,Analog
+CM2-KT-69,ธนาคารกรุงเทพ สาขาสุขุมวิท 26 ถนนพระรามที่ 4,4,13.718715,100.567983,Analog
+CM2-KT-7,ซอยเศรษฐีทวีทรัพย์ 1,4,13.724379,100.563733,Analog
+CM2-KT-70,ธนาคารกรุงเทพ สาขาสุขุมวิท 10 ถนนสุขุมวิท,4,13.739473,100.556856,Analog
+CM2-KT-71,บริษัท ปตท. จำกัด (มหาชน) ถนนอาจณรงค์,4,13.705541,100.583333,Analog
+CM2-KT-72,บริษัท เชลล์แห่งประเทศไทย จำกัด ถนน ณ ระนอง,4,13.712403,100.558903,Analog
+CM2-KT-73,ทางเข้าซอยเหลือสุข สุขุมวิท 50,4,13.705943,100.598747,Analog
+CM2-KT-74,ริมคลองพระโขนง ซอยภูมิจิตร,4,13.709424,100.592409,Analog
+CM2-KT-75,หน้าตึก เอส เอส พี ถนน ณ ระนอง,4,13.714595,100.558643,Analog
+CM2-KT-76,ชุมชนคลองเตยล็อค 4-5-6 (1),4,13.711733,100.576514,Analog
+CM2-KT-77,ชุมชนคลองเตยล็อค 4-5-6 (2),4,13.711048,100.575666,Analog
+CM2-KT-78,ปากซอยโชคดี,4,13.719744,100.5649,Analog
+CM2-KT-79,ชุมชนแสนสบาย-แสนสุข (1),4,13.717757,100.576104,Analog
+CM2-KT-8,ซอยอรรถกระวี,4,13.717988,100.569675,Analog
+CM2-KT-80,ชุมชนแสนสบาย-แสนสุข (2),4,13.718909,100.57433,Analog
+CM2-KT-81,ชุมชนทรัพย์มโนทัย (1),4,13.715312,100.570749,Analog
+CM2-KT-82,ชุมชนทรัพย์มโนทัย (2),4,13.713879,100.574232,Analog
+CM2-KT-83,ทางเข้าน้ำมัน ป.ต.ท.,4,13.697334,100.589544,Analog
+CM2-KT-84,ทางเข้าคลังน้ำมันเชลล์,4,13.711289,100.55933,Analog
+CM2-KT-85,ชุมชนข้างโรงเรียนวัดสะพาน (1),4,13.702834,100.588067,Analog
+CM2-KT-86,ชุมชนข้างโรงเรียนวัดสะพาน (2),4,13.702354,100.588966,Analog
+CM2-KT-87,ชุมชนหมู่บ้านพัฒนา 70 ไร่ (1),4,13.7087,100.574729,Analog
+CM2-KT-88,ชุมชนหมู่บ้านพัฒนา 70 ไร่ (2),4,13.708842,100.573092,Analog
+CM2-KT-89,ชุมชนร่มเกล้า (1),4,13.710873,100.567109,Analog
+CM2-KT-9,ซอยสายน้ำทิพย์ 2,4,13.726433,100.562992,Analog
+CM2-KT-90,ชุมชนร่มเกล้า (2),4,13.711449,100.567088,Analog
+CM3-KT-1,ชุมชนคลองเตยล็อค 1-2-3 (1),3,13.710938,100.5729,Analog
+CM3-KT-10,ป้ายรถประจำทางข้างสวนสวนเบญจกิตติ (ถนนรัชดาภิเษก) ,3,13.729623,100.55977,Analog
+CM3-KT-11,ตรงข้าม Nana Plaza (ซอยสุขุมวิท 4),3,13.741461,100.553008,Analog
+CM3-KT-12,หน้า Korean Town (ปากซอยสุขุมวิท 12),3,13.738372,100.558391,Analog
+CM3-KT-2,ชุมชนพัฒนาชุมชนใหม่ แฟลต 19-22 (ทางโค้ง),3,13.711021,100.570753,Analog
+CM3-KT-3,ซอยภูมิจิต,3,13.712291,100.591815,Analog
+CM3-KT-4,ซอยสุขุมวิท 6,3,13.733726,100.553093,Analog
+CM3-KT-5,หน้าอาคารรับน้ำไผพิทักษ์ ถ.ดวงพิทักษ์,3,13.73402,100.551821,Analog
+CM3-KT-6,ทางเข้าสวนเบญจกิติ ประตู 3 ท้ายซอยสุขุมวิท 10,3,13.733726,100.553093,Analog
+CM3-KT-7,กลางซอยเมธีนิเวศม์ (เอ็มโพเรียม),3,13.729241,100.567543,Analog
+CM3-KT-8,ปากซอยสุขุมวิท 18 (CONDO CITI SMART),3,13.734929,100.562761,Analog
+CM3-KT-9,กลางซอยสุขุมวิท 18 (โรงแรมแรมแบรนดท์),3,13.732662,100.562761,Analog
+CM4-KT-1,ปากซอยสุขุมวิท 20,3,13.734289,100.564094,Analog
+CM4-KT-2,ซอยสุขุมวิท 24,3,13.720948,100.565641,Analog
+CM4-KT-3,ปากซอยท่าเรือ 2,3,13.715491,100.56282,Analog
+CM4-KT-4,บริเวณใต้ทางด่วนตลาดปีนัง,3,13.713784,100.554154,Analog
+CM4-KT-5,บริเวณพื้นที่ว่างลานดินใต้ทางด่วนรามอินทรา,3,13.710539,100.597544,Analog
+CM4-KT-6,ถ.ดวงพิทักษ์ (เลียบทางด่วนบ่อนไก่),3,13.722832,100.553103,Analog
+CM5-KT-100,จุดที่ 1 บริเวณอาคารเรียน มูลนิธิหิมะทองคำ,2,13.704495,100.589619,Digital
+CM5-KT-101,จุดที่ 2 บริเวณ ลานกีฬา หิมะทองคำ,3,13.704538,100.588762,Digital
+CM5-KT-102,จุดที่ 3 บริเวณหน้าสถานีสูบน้ำหิมะทองคำ,3,13.704553,100.589105,Digital
+CM5-KT-107,จุดที่ 1 ชุมชนสถานีสูบน้ำคลองเตย,2,13.706748,100.587757,Digital
+CM5-KT-108,จุดที่ 2 ชุมชนสถานีสูบน้ำคลองเตย,3,13.706336,100.58802,Digital
+CM5-KT-109,จุดที่ 3 ชุมชนสถานีสูบน้ำคลองเตย,2,13.706231,100.588113,Digital
+CM5-KT-166,จุดที่ 1 ชุมชนอาคารรับน้ำไผ่พิทักษ์,3,13.734258,100.551785,Digital
+CM5-KT-167,จุดที่ 2 ชุมชนอาคารรับน้ำไผ่พิทักษ์,2,13.735336,100.551626,Digital
+CM5-KT-168,จุดที่ 3 ชุมชนอาคารรับน้ำไผ่พิทักษ์,1,13.734085,100.552075,Digital
+CM5-KT-34,จุดที่ 1 บริเวณโดยรอบสถานีสูบน้ำพระราม 4,2,13.709957,100.553751,Digital
+CM5-KT-35,จุดที่ 2 บริเวณโดยรอบสถานีสูบน้ำพระราม 4,4,13.709044,100.554507,Digital
+CM5-KT-36,จุดที่ 3 บริเวณโดยรอบสถานีสูบน้ำพระราม 4,2,13.709759,100.553377,Digital
+CM5-KT-94,จุดที่ 1 บริเวณ สถานีสูบน้ำพระโขนง,3,13.706766,100.595456,Digital
+CM5-KT-95,จุดที่ 2 บริเวณ สถานีสูบน้ำพระโขนง,3,13.707077,100.595217,Digital
+CM5-KT-96,จุดที่ 3 บริเวณ สถานีสูบน้ำพระโขนง,2,13.707639,100.594964,Digital
+CM5-KT-97,จุดที่ 1 บริเวณอาคารสูบน้ำอุโมงค์พระโขนง,3,13.710091,100.594798,Digital
+CM5-KT-98,จุดที่ 2 บริเวณอาคารสูบน้ำอุโมงค์พระโขนง,3,13.710838,100.594731,Digital
+CM5-KT-99,จุดที่ 3 บริเวณกลางซอยสุขุมวิท 48,3,13.711776,100.594996,Digital
+CM-KT-1/1,บริเวณจากแยกคลองเตยบริเวณทางเท้าคนเดินมาถึงตลาดหลักทรัพย์ DVR1,3,13.722185,100.559622,Digital
+CM-KT-1/2,บริเวณจากแยกคลองเตยบริเวณทางเท้าคนเดินมาถึงตลาดหลักทรัพย์ DVR2,3,13.724479,100.560277,Digital
+CM-KT-10,สะพานลอยปากซอยโรงงานยาสูบ,2,13.721535,100.555297,Digital
+CM-KT-11,สะพานลอยสี่แยกรัชดา - ถนนพระรามที่ 4,2,13.720465,100.559266,Digital
+CM-KT-12,สะพานลอยหน้าห้างโลตัส พระราม 4,2,13.718264,100.568922,Digital
+CM-KT-13,สะพานลอยหน้าตึกการท่าเรือฯ - กรมศุลกากร,2,13.712716,100.564454,Digital
+CM-KT-14,ปากซอยสุขุมวิท 38 ,4,13.724012,100.578621,Digital
+CM-KT-15,ปากซอยสุขุมวิท 26,4,13.729415,100.57103,Digital
+CM-KT-16,ปากซอยสุขุมวิท 20,4,13.734491,100.563939,Digital
+CM-KT-17,ปากซอยสุขุมวิท 16,4,13.735233,100.561163,Digital
+CM-KT-18,ป้ายรถประจำทางใต้สถานีรถไฟฟ้าอ่อนนุช (ขาเข้า) ,4,13.705661,100.600919,Digital
+CM-KT-2,บริเวณสี่แยกกรมศุลกากร ,4,13.715718,100.565405,Digital
+CM-KT-3,บริเวณสี่แยกอาจณรงค์  ,4,13.709887,100.581356,Digital
+CM-KT-4,ปากซอยแสนสุข ถนนพระราม 4,4,13.7164,100.573405,Digital
+CM-KT-5,บริเวณซอยสุขุมวิท 50,4,13.706568,100.600272,Digital
+CM-KT-6,บริเวณหน้าบ้านปลายเนิน ถนนพระราม 4  ,4,13.722005,100.554448,Digital
+CM-KT-7,สะพานลอยปากซอยสุขุมวิท 2,2,13.742304,100.551792,Digital
+CM-KT-8,สะพานลอยปากซอยสุขุมวิท 6 หน้าอาคารทูแปซิฟิค,2,13.740993,100.554632,Digital
+CM-KT-9,สะพานลอยระหว่างซอยสุขุมวิท 8 - 10,2,13.739707,100.55651,Digital
+DDS-KT-41,สถานีสูบน้ำพระราม 4,8,13.70883,100.554828,Digital
+DDS-KT-44,อาคารรับน้ำไผ่พิทักษ์,4,13.734263,100.551809,Digital
+DDS-KT-67,สถานีสูบน้ำพระโขนง,12,13.708831,100.594925,Digital
+DDS-KT-68,อาคารสูบน้ำอุโมงค์พระโขนง,4,13.709806,100.595281,Digital
+DDS-KT-70,สถานีสูบน้ำหิมะทองคำ,4,13.707073,100.586406,Digital
+DDS-KT-75,สถานีสูบน้ำคลองเตย,4,13.70638,100.587273,Digital
+GD-KT-1-1,อุทยานเบญจสิริ,30,13.729533,100.566796,Digital
+GD-KT-2-1,สวนเบญจกิติ,45,13.733033,100.557153,Digital
+GD-KT-3-2,สวนเบญจกิติ เฟส2 ระยะที่1,59,13.731605,100.556013,Digital
+HC-KT-1,สุขุมวิท,10,13.727973,100.572984,Digital
+HC-KT-3,คลองเจต (คลองเตย),10,13.714959,100.569945,Digital
+KT-00,สำนักงานเขตคลองเตย,12,13.708388,100.583832,Digital
+KT-1,ทางแยกคลองเตย,8,13.720933,100.557396,Digital
+KT-14,ถ.พระราม4-กล้วยน้ำไทย,7,13.712809,100.583888,Digital
+KT-15,มหาวิทยาลัยกรุงเทพ,2,13.712178,100.580567,Digital
+KT-16-1,ปากซอยแสนสบายหน้ากองซ่อมบำรุงองค์การโทรศัพท์ ตู้ที่ 1,3,13.718419,100.576292,Digital
+KT-16-2,ปากซอยแสนสบายหน้ากองซ่อมบำรุงองค์การโทรศัพท์ ตู้ที่ 2,3,13.715144,100.576192,Digital
+KT-17,หน้า ร.ร.พระหฤทัยคอนแวนต์,2,13.718176,100.557938,Digital
+KT-18-1,ชุมชนร่มเกล้า-หัวโค้ง (ใต้ทางด่วนหน้าชุมชน) ตู้1 ,2,13.7123429,100.5699259,Digital
+KT-18-2,ชุมชนร่มเกล้า-หัวโค้ง (ใต้ทางด่วนหน้าชุมชน) ตู้2,2,13.712129,100.5689304,Digital
+KT-19-1,ซอยโรงงานยาสูบ ตู้ที่1,3,13.721738,100.555013,Digital
+KT-19-2,ซอยโรงงานยาสูบ ตู้ที่ 2,3,13.723105,100.55455,Digital
+KT-2,ทางแยกณ ระนอง,10,13.71757,100.557951,Digital
+KT-20-1,ปากซอยสายน้ำทิพย์ ตู้ที่ 1,3,13.726141,100.565189,Digital
+KT-20-2,ปากซอยสายน้ำผึ้ง  ตู้ที่ 2,3,13.733257,100.565116,Digital
+KT-3,ทางแยกรัชพระราม,10,13.720013,100.558955,Digital
+KT-4,ทางแยกเอกมัย-สุขุม,6,13.719913,100.58451,Digital
+KT-5,สะพานลอยหน้าโรงเรียนพระหฤทัยคอนแวนต์,2,13.718101,100.557999,Digital
+KT-6/1,ชุมชนหมู่บ้านพัฒนา 70 ไร่ ทางเข้า-ออก,4,13.712265,100.569975,Digital
+KT-6/2,,4,13.712146,100.568989,Digital
+KT-7/1,ซอยวัดไผ่สิงห์โต,4,13.720445,100.560308,Digital
+KT-7/2,,4,13.722848,100.560389,Digital
+KT-8/1,หน้าตลาดปีนัง,4,13.716983,100.55752,Digital
+KT-8/2,หน้าตลาดปีนัง,4,13.717052,100.55744,Digital
+KT-9/1,สถานีขนส่งเอกมัย,4,13.72004,100.58416,Digital
+KT-9/2,สถานีขนส่งเอกมัย,4,13.720298,100.584485,Digital
+SB-KT-1,ซอยสุขุมวิท 16 หลังอาคารเลครัชดา  ,3,13.7314201,100.5609997,Digital
+SB-KT-10,บริเวณหน้าบ้านสบายสปา สุขุมวิท 26,2,13.724623,100.570104,Digital
+SB-KT-11,บริเวณทางเข้าสถานีขนส่งผู้โดยสารเอกมัย,3,13.7203215,100.5838982,Digital
+SB-KT-12,ป้ายรถโดยสารบริเวณท้องฟ้าจำลอง ถนนสุขุมวิท จุดที่ 2,2,13.7205602,100.5836097,Digital
+SB-KT-13,ป้ายรถโดยสารบริเวณศูนย์ประชุมแห่งชาติสิริกิตติ์ ถนนรัชดาภิเษก,2,13.7211496,100.5592786,Digital
+SB-KT-14,หน้าสวนชูวิทย์ ปากซอยสุขุมวิท 10,2,13.739121,100.557339,Digital
+SB-KT-15,ป้ายรถโดยสารบริเวณท้องฟ้าจำลอง ถนนสุขุมวิท จุดที่ 1,3,13.7209573,100.5830076,Digital
+SB-KT-16,ป้ายรถโดยสาร ถ.เกษมราษฎร์ หน้าตึกการท่าเรือ,2,13.7132623,100.5645214,Digital
+SB-KT-17,ป้ายรถโดยสารหน้าสโมสรการท่าเรือ ถ.สุนทรโกษา,2,13.7161337,100.5613247,Digital
+SB-KT-18,ถ.อาจณรงค์ เส้นทางก่อนเข้าคลัง ปตท.,2,13.7059677,100.5828274,Digital
+SB-KT-19,ป้ายรอรถโดยสารประจำทาง บริเวณปากซอย ไผ่สิงโต ถนนพระราม 4,2,13.7196767,100.5606043,Digital
+SB-KT-2,หน้าโรงเรียนพระโขนงวิทยา จุดที่ 1,2,13.709482,100.59103,Digital
+SB-KT-20,ถนนเกษมราษฎร์ ตัด ถนนการท่าเรือ 1 ,3,13.7125222,100.564228,Digital
+SB-KT-21,ถนนเกษมราษณ์ ตัด ทางขึ้นทางด่วนท่าเรือ,3,13.711666,100.564025,Digital
+SB-KT-22,ถนนท่าเรือ 1  ตัด ถนน ณ ระนอง,3,13.715109,100.558467,Digital
+SB-KT-23,บริเวณโรงแรม โรงแรมแมริออท ซอยสุขุมวิท 22 ,2,13.7308968,100.5651242,Digital
+SB-KT-24,บริเวณแยกทองหล่อ,3,13.723499,100.579412,Digital
+SB-KT-25,บริเวณสัญญาณไฟจราจรคนข้ามถนนอัจฉริยะ ด้านหน้าชุมชนน้องใหม่ ถนนอาจณรงค์,2,13.7132228,100.5688425,Digital
+SB-KT-26,ใต้สะพานพระโขนง,4,13.711278,100.596482,Digital
+SB-KT-27,ซอยฟาร์มวัฒนา,4,13.711643,100.586273,Digital
+SB-KT-28,บริเวณป้ายรถประจำทาง ตรงข้ามชุมชนพัฒนาใหม่,4,13.7155,100.563047,Digital
+SB-KT-29,ถนนพระรามที่ 3 ซอย 81 ถึงถนนพระรามที่ 3 ซอย 83,4,13.715442,100.555613,Digital
+SB-KT-3,หน้าโรงเรียนพระโขนงวิทยา จุดที่ 2,2,13.7091915,100.5912319,Digital
+SB-KT-30,หน้าชุมชนพัฒนาใหม่ (ซอยคั่วพริก),4,13.715352,100.563687,Digital
+SB-KT-31,โรงเรียนสามัคคีสงเคราะห์,4,13.706655,100.582656,Digital
+SB-KT-32,หน้าโรงงานยาสูบประตู 2,4,13.732769,100.551875,Digital
+SB-KT-33,ถนนสุขุมวิทตัดถนนดวงพิทักษ์,3,13.74251,100.550986,Digital
+SB-KT-34,สะพานเขียว จุดที่ 7 บริเวณบนสะพานเขียว เชื่อมต่อสวนเบญจกิติ,6,13.734,100.5517,Digital
+SB-KT-35,สะพานเขียว จุดที่ 8 บริเวณบนสะพานเขียว เชื่อมต่อสวนเบญจกิติ,6,13.7339,100.5528,Digital
+SB-KT-36,สะพานเขียว จุดที่ 9 บริเวณบนสะพานเขียว เชื่อมต่อสวนเบญจกิติ,6,13.7339,100.5542,Digital
+SB-KT-37,สะพานเขียว จุดที่ 10 บริเวณบนสะพานเขียว เชื่อมต่อสวนเบญจกิติ,7,13.7339,100.5562,Digital
+SB-KT-38,สะพานเขียว จุดที่ 11 บริเวณภายในสวนเบญจกิติ เชื่อมต่อสะพานเขียว,3,13.7335,100.5574,Digital
+SB-KT-39,สะพานเขียว จุดที่ 12 บริเวณภายในสวนเบญจกิติ เชื่อมต่อสะพานเขียว,2,13.7335,100.5577,Digital
+SB-KT-4,หน้าโรงเรียนพระโขนงวิทยา จุดที่ 3,2,13.7096906,100.5904582,Digital
+SB-KT-40,สะพานเขียว จุดที่ 13 บริเวณภายในสวนเบญจกิติ เชื่อมต่อสะพานเขียว,2,13.7338,100.5581,Digital
+SB-KT-41,สะพานเขียว จุดที่ 14 บริเวณภายในสวนเบญจกิติ เชื่อมต่อสะพานเขียว,2,13.7337,100.5591,Digital
+SB-KT-42,สะพานเขียว จุดที่ 15 บริเวณสะพานลอยฝั่งขาเข้าถนนรัชดา เชื่อมต่อสะพานเขียว,5,13.7334,100.5601,Digital
+SB-KT-43,สะพานเขียว จุดที่ 16 บริเวณสะพานลอยฝั่งขาออกถนนรัชดา เชื่อมต่อสะพานเขียว,4,13.7334,100.5602,Digital
+SB-KT-44,Bangkok City Model Exhibitio (โรงงานยาสูบ),4,13.726897,100.557171,Digital
+SB-KT-5,หน้าศาลเจ้าเพ็กเล้งเก็งมังกรเขียว ถนนรัชดาภิเษก ,2,13.7186224,100.5583707,Digital
+SB-KT-6,ปากซอยสุขุมวิท 40 ,2,13.722325,100.581001,Digital
+SB-KT-7,กลางซอยสุขุมวิท 42 จุดที่1 (ปากซอยบาร์โบส),2,13.7158932,100.5844899,Digital
+SB-KT-8,กลางซอยสุขุมวิท 42 จุดที่2 (ปากซอยแสงจันทร์),3,13.714569,100.584297,Digital
+SB-KT-9,บริเวณหน้าสุธนเพลส ซอยสุขุมวิท 26,2,13.72488,100.5729,Digital
+TF 9-CM2-KT-69,ปากซอยอารี ถนนพระรามที่ 4,2,13.718699,100.567947,จราจร
+TF 9-CM4-KT-1,ปากซอยสุขุมวิท 20 ถนนสุขุมวิท,2,13.7342781,100.5641577,จราจร
+TF 9-HC-KT-1,ปากซอยสุขุมวิท 30,2,13.727966,100.57303,จราจร
+TF10-KT-1,บริเวณปากซอยพิชัยสวัสดิ์ - ปากซอยพระรามที่ 4 ซอย 2 ถนนพระรามที่ 4,2,13.7129545,100.5903231,จราจร
+TF1-KT-3-1N,รัชพระราม RX1,4,13.720386,100.558854,จราจร
+TF1-PW-2-1,อโศก-สุขุมวิท RX1,3,13.7367,100.561194,จราจร
+TF5-KT-1,BTS เอกมัย (E7),4,13.720927,100.582993,จราจร
+TF5-KT-2,BTS พระโขนง (E8),4,13.715336,100.5909,จราจร
+TF5-KT-3,BTS นานา (E3),4,13.740772,100.555218,จราจร
+TF5-KT-4,BTS ทองหล่อ (E6),4,13.7246841,100.5780653,จราจร
+TF6-KT-1,ถนนอ่อนนุช บริเวณแยกอ่อนนุช,4,13.708595,100.599463,จราจร
+TF6-KT-2,ถนนพระรามที่ 4 บริเวณปากซอยโรงพยาบาล 2,4,13.712714,100.587765,จราจร
+TF8-KT-1,แยกพระราม 4,18,13.7202327,100.5568881,จราจร
+TF-KT-1,รัชดา-พระราม 4,1,13.720426,100.558997,จราจร
+TF-KT-2,สุขุมวิท 55,1,13.72349,100.579514,จราจร
+TF-PK-1,แยกพระโขนง,1,13.71305,100.59411,จราจร</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+const TYPES = {
+  'Digital': {color:getComputedStyle(document.documentElement).getPropertyValue('--digital').trim(), label:'Digital'},
+  'Analog':  {color:getComputedStyle(document.documentElement).getPropertyValue('--analog').trim(),  label:'Analog'},
+  'จราจร':   {color:getComputedStyle(document.documentElement).getPropertyValue('--traffic').trim(), label:'จราจร'}
+};
+
+
+const raw = document.getElementById('data').textContent.trim().split(/\r?\n/);
+raw.shift();
+const points = raw.map(line => {
+  const [code, name, cams, lat, lng, type] = line.split(',');
+  return {code:code.trim(), name:(name||'').trim() || 'ไม่ระบุชื่อจุด', cams:+cams||0, lat:+lat, lng:+lng, type:(type||'').trim()};
+}).filter(p => isFinite(p.lat) && isFinite(p.lng) && p.lat && p.lng);
+
+const totalCams = points.reduce((s,p)=>s+p.cams,0);
+document.getElementById('subline').textContent =
+  `ทั้งหมด ${points.length.toLocaleString('th-TH')} จุด · ${totalCams.toLocaleString('th-TH')} กล้อง`;
+
+
+const map = L.map('map', {zoomControl:false, preferCanvas:false}).setView([13.718, 100.574], 14);
+L.control.zoom({position:'topright'}).addTo(map);
+const esri = (path, attr) => L.tileLayer(`https://server.arcgisonline.com/ArcGIS/rest/services/${path}/MapServer/tile/{z}/{y}/{x}`,
+    {maxZoom:20, maxNativeZoom:attr.nz||19, attribution:attr.a||'Tiles © Esri'});
+const bases = {
+  'แผนที่สว่าง': esri('Canvas/World_Light_Gray_Base', {nz:16, a:'Tiles © Esri — Esri, HERE, Garmin, © OpenStreetMap'}),
+  'แผนที่ถนน (OSM)': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      {maxZoom:20, maxNativeZoom:19, attribution:'© OpenStreetMap contributors'}),
+  'แผนที่ถนน (Esri)': esri('World_Street_Map', {nz:19}),
+  'แผนที่มืด': esri('Canvas/World_Dark_Gray_Base', {nz:16, a:'Tiles © Esri — Esri, HERE, Garmin, © OpenStreetMap'}),
+  'ภาพดาวเทียม': esri('World_Imagery', {nz:19})
+};
+bases['แผนที่สว่าง'].addTo(map);
+L.control.layers(bases, null, {position:'topright'}).addTo(map);
+L.control.scale({imperial:false, position:'bottomleft'}).addTo(map);
+
+const clusterLayer = L.markerClusterGroup({
+  showCoverageOnHover:false, maxClusterRadius:45, spiderfyOnMaxZoom:true,
+  iconCreateFunction: c => {
+    const ms = c.getAllChildMarkers();
+    const cams = ms.reduce((s,m)=>s+m.options.pt.cams,0);
+    const size = Math.min(64, 42 + Math.sqrt(ms.length)*3);
+    return L.divIcon({className:'', iconSize:[size,size],
+      html:`<div class="cluster" style="width:${size}px;height:${size}px"><div style="text-align:center">${ms.length}<small>${cams} กล้อง</small></div></div>`});
+  }
+});
+const plainLayer = L.layerGroup();
+let activeLayer = clusterLayer;
+map.addLayer(activeLayer);
+
+function iconFor(p, hl){
+  const s = Math.round(22 + Math.min(p.cams, 20) * 1.1);
+  const fs = p.cams >= 10 ? 11 : 12;
+  return L.divIcon({className:'', iconSize:[s,s], iconAnchor:[s/2,s/2], popupAnchor:[0,-s/2],
+    html:`<div class="pin${hl?' hl':''}" style="width:${s}px;height:${s}px;background:${TYPES[p.type]?.color||'#64748b'};font-size:${fs}px">${p.cams}</div>`});
+}
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function popupHtml(p){
+  const col = TYPES[p.type]?.color || '#64748b';
+  return `<div class="pp">
+    <span class="type" style="background:${col}">${esc(p.type)}</span>
+    <h3>${esc(p.name)}</h3>
+    <div class="code">${esc(p.code)}</div>
+    <dl><dt>จำนวนกล้อง</dt><dd><b>${p.cams}</b> ตัว</dd>
+        <dt>พิกัด</dt><dd>${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}</dd></dl>
+    <a href="https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}" target="_blank" rel="noopener">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      เปิดใน Google Maps</a>
+  </div>`;
+}
+points.forEach(p => {
+  p.marker = L.marker([p.lat,p.lng], {icon:iconFor(p), pt:p, title:p.name});
+  p.marker.bindPopup(popupHtml(p));
+  p.marker.on('mouseover', ()=>highlight(p,true));
+  p.marker.on('mouseout', ()=>highlight(p,false));
+  p.marker.on('click', ()=>markActive(p));
+});
+
+// ---- state & UI ----
+const state = {types:new Set(Object.keys(TYPES)), q:'', sort:'code'};
+const chipsEl = document.getElementById('chips');
+const maxTypeCams = Math.max(...Object.keys(TYPES).map(t => points.filter(p=>p.type===t).reduce((s,p)=>s+p.cams,0)));
+Object.entries(TYPES).forEach(([t,info]) => {
+  const pts = points.filter(p=>p.type===t), cams = pts.reduce((s,p)=>s+p.cams,0);
+  const b = document.createElement('button');
+  b.className = 'chip'; b.dataset.type = t;
+  b.innerHTML = `<span class="sw" style="background:${info.color}"></span>
+    <div style="flex:1"><div style="display:flex;justify-content:space-between;gap:8px">
+      <span class="name">${info.label}</span><span class="cnt">${pts.length} จุด · ${cams} กล้อง</span></div>
+      <div class="bar"><i style="width:${cams/maxTypeCams*100}%;background:${info.color}"></i></div></div>`;
+  b.onclick = () => { state.types.has(t) ? state.types.delete(t) : state.types.add(t); b.classList.toggle('off'); render(); };
+  chipsEl.appendChild(b);
+});
+
+const collator = new Intl.Collator('th', {numeric:true});
+function filtered(){
+  const q = state.q.toLowerCase();
+  let arr = points.filter(p => state.types.has(p.type) && (!q || p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q)));
+  if (state.sort==='cams') arr.sort((a,b)=>b.cams-a.cams || collator.compare(a.code,b.code));
+  else if (state.sort==='name') arr.sort((a,b)=>collator.compare(a.name,b.name));
+  else arr.sort((a,b)=>collator.compare(a.code,b.code));
+  return arr;
+}
+
+const listEl = document.getElementById('list');
+function render(fit){
+  const arr = filtered();
+  clusterLayer.clearLayers(); plainLayer.clearLayers();
+  const ms = arr.map(p=>p.marker);
+  activeLayer === clusterLayer ? clusterLayer.addLayers(ms) : ms.forEach(m=>plainLayer.addLayer(m));
+  document.getElementById('sPts').textContent = arr.length.toLocaleString('th-TH');
+  document.getElementById('sCams').textContent = arr.reduce((s,p)=>s+p.cams,0).toLocaleString('th-TH');
+  document.getElementById('count').textContent = `แสดง ${arr.length} จาก ${points.length} จุด`;
+  listEl.innerHTML = arr.length ? '' : '<div class="empty">ไม่พบจุดที่ตรงกับเงื่อนไข</div>';
+  const frag = document.createDocumentFragment();
+  arr.forEach(p => {
+    const d = document.createElement('div');
+    d.className = 'item'; p.el = d;
+    d.innerHTML = `<div class="badge" style="background:${TYPES[p.type]?.color}">${p.cams}</div>
+      <div style="min-width:0"><div class="t">${esc(p.name)}</div><div class="c">${esc(p.code)}</div></div>`;
+    d.onclick = () => focusPoint(p);
+    d.onmouseenter = () => highlight(p,true);
+    d.onmouseleave = () => highlight(p,false);
+    frag.appendChild(d);
+  });
+  listEl.appendChild(frag);
+  if (fit && arr.length) map.fitBounds(L.latLngBounds(arr.map(p=>[p.lat,p.lng])), {padding:[40,40], maxZoom:17});
+}
+function highlight(p,on){
+  p.marker.setIcon(iconFor(p,on));
+  if (p.el) p.el.classList.toggle('active', on || p===activePt);
+}
+let activePt = null;
+function markActive(p){
+  if (activePt?.el) activePt.el.classList.remove('active');
+  activePt = p;
+  if (p.el){ p.el.classList.add('active'); p.el.scrollIntoView({block:'nearest', behavior:'smooth'}); }
+}
+function focusPoint(p){
+  markActive(p);
+  if (window.innerWidth <= 800) panel.classList.remove('open');
+  const open = () => { map.setView([p.lat,p.lng], Math.max(map.getZoom(),17), {animate:true}); p.marker.openPopup(); };
+  activeLayer === clusterLayer ? clusterLayer.zoomToShowLayer(p.marker, open) : open();
+}
+
+let t;
+document.getElementById('q').addEventListener('input', e => { clearTimeout(t); t = setTimeout(()=>{ state.q = e.target.value.trim(); render(!!state.q); }, 150); });
+document.getElementById('sort').addEventListener('change', e => { state.sort = e.target.value; render(); });
+document.getElementById('cluster').addEventListener('change', e => {
+  map.removeLayer(activeLayer);
+  activeLayer = e.target.checked ? clusterLayer : plainLayer;
+  map.addLayer(activeLayer); render();
+});
+const panel = document.getElementById('panel');
+document.getElementById('panelHead').addEventListener('click', () => { if (window.innerWidth <= 800) panel.classList.toggle('open'); });
+
+render(true);
+</script>
+</body>
+</html>
