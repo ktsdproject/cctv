@@ -189,7 +189,7 @@
         <option value="cams">กล้องมาก → น้อย</option>
         <option value="name">เรียงตามชื่อ</option>
       </select>
-      <label class="toggle"><input type="checkbox" id="cluster" checked> รวมกลุ่ม</label>
+      <label class="toggle"><input type="checkbox" id="cluster"> รวมกลุ่ม</label>
     </div>
     <div class="list" id="list"></div>
   </aside>
@@ -504,7 +504,7 @@ const clusterLayer = L.markerClusterGroup({
   }
 });
 const plainLayer = L.layerGroup();
-let activeLayer = clusterLayer;
+let activeLayer = plainLayer;
 map.addLayer(activeLayer);
 
 function iconFor(p, hl){
